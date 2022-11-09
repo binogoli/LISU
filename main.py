@@ -22,13 +22,16 @@ import argparse
 import sys
 import time
 
+from IQA_pytorch import SSIM
+from utils import PSNR
+
 np.set_printoptions(threshold=sys.maxsize)
 torch.set_printoptions(profile='full')
 # torch.backends.cudnn.benchmark = True
 
 
 def train_and_val(args, Decomp, opt_Decomp, Enhance, opt_Enhance, trainloader, valloader, best_pred=0.0):
-    writer_name = '{}_{}'.format('LISU', str(time.strftime("%m-%d %H:%M:%S", time.localtime())))
+    writer_name = '{}_{}'.format('LISU', str(time.strftime("%m-%d %H时%M分%S秒", time.localtime())))
     writer = SummaryWriter(os.path.join('runs', writer_name))
     step = 0
 
@@ -356,21 +359,22 @@ def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', type=str, default='train_and_val', help='train_and_val|output|evaluation')
     parser.add_argument('--num_epochs', type=int, default=200, help='Number of epochs to train for')
-    parser.add_argument('--data_path', type=str, default='/path/to/your/dataset/', help='path to your dataset')
+    parser.add_argument('--data_path', type=str, default='./LISU_LLRGBD_real', help='path to your dataset')
     parser.add_argument('--start_epoch', type=int, default=0, help='Start counting epochs from this number')
-    parser.add_argument('--checkpoint_step', type=int, default=5, help='How often to save checkpoints (epochs)')
+    parser.add_argument('--checkpoint_step', type=int, default=10, help='How often to save checkpoints (epochs)')
     parser.add_argument('--validation_step', type=int, default=1, help='How often to perform validation (epochs)')
     parser.add_argument('--crop_height', type=int, default=576, help='Height of cropped/resized input image to network')
     parser.add_argument('--crop_width', type=int, default=768, help='Width of cropped/resized input image to network')
-    parser.add_argument('--batch_size', type=int, default=4, help='Number of images in each batch')
+    parser.add_argument('--batch_size', type=int, default=1, help='Number of images in each batch')
     parser.add_argument('--learning_rate', type=float, default=0.01, help='learning rate used for train')
     parser.add_argument('--print_freq', type=int, default=600, help='print freq')
-    parser.add_argument('--num_workers', type=int, default=16, help='num of workers')
+    parser.add_argument('--num_workers', type=int, default=2, help='num of workers')
     parser.add_argument('--num_classes', type=int, default=14, help='num of object classes (with void)')
     parser.add_argument('--cuda', type=str, default='0', help='GPU id used for training')
     parser.add_argument('--seed', type=int, default=1, help='random seed')
     parser.add_argument('--use_gpu', type=bool, default=True, help='whether to user gpu for training')
-    parser.add_argument('--pretrained_model_path', type=str, default='/path/to/LISU_LLRGBD_real_best.pth.tar', help='saved model')
+    parser.add_argument('--pretrained_model_path', type=str, default=None, help='saved model')
+    #parser.add_argument('--pretrained_model_path', type=str, default='/path/to/LISU_LLRGBD_real_best.pth.tar', help='saved model')
     parser.add_argument('--save_model_path', type=str, default='./checkpoints', help='path to save trained model')
     parser.add_argument('--multiple-GPUs', default=False, help='train with multiple GPUs')
     args = parser.parse_args(argv)
@@ -412,8 +416,8 @@ def main(argv):
     #trainset = LLRGBD_synthetic(args, mode='train')
     valset = LLRGBD_real(args, mode='val')
     # valset = LLRGBD_synthetic(args, mode='val')
-    trainloader = DataLoader(trainset, batch_size=12, shuffle=True, num_workers=16, drop_last=True)
-    valloader = DataLoader(valset, batch_size=1, shuffle=False, num_workers=16, drop_last=False)
+    trainloader = DataLoader(trainset, batch_size=8, shuffle=True, num_workers=2, drop_last=True)
+    valloader = DataLoader(valset, batch_size=1, shuffle=False, num_workers=2, drop_last=False)
 
 
     if args.mode == 'train_and_val':
